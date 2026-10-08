@@ -1,0 +1,988 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>لوحة تحكم الدكتور - إدارة الزيارات الطبية</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+      * {
+        box-sizing: border-box;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background-color: #f8fafc;
+        color: #334155;
+        padding: 20px;
+      }
+      .container {
+        max-width: 1350px;
+        margin: 0 auto;
+      }
+
+      #login-screen {
+        max-width: 400px;
+        margin: 80px auto;
+        background: #fff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #ffffff;
+        padding: 20px 25px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .header h1 {
+        font-size: 1.5rem;
+        color: #0f4c42;
+      }
+      .header-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .stats-badge {
+        background-color: #eff6ff;
+        color: #2563eb;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 0.95rem;
+      }
+
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.6);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        padding: 20px;
+      }
+      .modal-card {
+        background: #ffffff;
+        width: 100%;
+        max-width: 580px;
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 12px;
+      }
+      .modal-header h3 {
+        font-size: 1.2rem;
+        color: #1e293b;
+      }
+      .close-btn {
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #64748b;
+        font-weight: bold;
+        border: none;
+        background: none;
+      }
+
+      .settings-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+      .row-group {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .field-group {
+        flex: 1;
+        min-width: 170px;
+      }
+      .field-group label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #475569;
+      }
+
+      .controls {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        align-items: center;
+        background: #fff;
+        padding: 15px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      }
+      input[type="text"],
+      input[type="number"],
+      input[type="password"],
+      input[type="date"],
+      select,
+      button {
+        padding: 9px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 0.9rem;
+      }
+
+      .btn-primary {
+        background-color: #2563eb;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      .btn-manual-add {
+        background-color: #168374;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      .btn-success {
+        background-color: #10b981;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+        width: 100%;
+        margin-top: 10px;
+        padding: 12px;
+      }
+
+      .table-container {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: right;
+      }
+      th,
+      td {
+        padding: 12px 14px;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 0.88rem;
+      }
+      th {
+        background-color: #f1f5f9;
+        color: #475569;
+        font-weight: 700;
+      }
+      tr:hover {
+        background-color: #f8fafc;
+      }
+
+      .status-pill {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-weight: bold;
+        font-size: 0.8rem;
+        display: inline-block;
+      }
+      .pill-pending {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .pill-accepted {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .pill-rejected {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      .action-btns {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+      }
+      .btn-icon-edit {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 5px 8px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9rem;
+      }
+      .btn-icon-accept {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 5px 8px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 0.8rem;
+      }
+      .btn-icon-reject {
+        background: #ef4444;
+        color: white;
+        border: none;
+        padding: 5px 8px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 0.8rem;
+      }
+
+      .time-badge {
+        background-color: #fef3c7;
+        color: #92400e;
+        padding: 3px 6px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 0.82rem;
+      }
+      .code-badge {
+        background-color: #e0f2fe;
+        color: #0369a1;
+        padding: 3px 6px;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 0.8rem;
+      }
+
+      .confirm-btn-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 20px;
+      }
+      .btn-confirm-accept {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      .btn-confirm-reject-keep {
+        background: #f59e0b;
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      .btn-confirm-reject-clear {
+        background: #d97706;
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      .btn-confirm-reject-delete {
+        background: #ef4444;
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- تسجيل الدخول -->
+      <div id="login-screen">
+        <h2>تسجيل دخول الدكتور</h2>
+        <p style="color: #64748b; margin: 10px 0 20px; font-size: 0.9rem">
+          أدخل كلمة المرور لعرض جدول الحجوزات
+        </p>
+        <input
+          type="password"
+          id="passcode"
+          placeholder="كلمة المرور"
+          style="width: 100%; margin-bottom: 15px"
+        />
+        <button
+          onclick="checkPasscode()"
+          class="btn-primary"
+          style="width: 100%"
+        >
+          دخول
+        </button>
+        <p
+          id="login-err"
+          style="
+            color: #ef4444;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            display: none;
+          "
+        >
+          كلمة المرور غير صحيحة!
+        </p>
+      </div>
+
+      <!-- لوحة التحكم -->
+      <div id="dashboard-screen" style="display: none">
+        <div class="header">
+          <h1>📋 جدول الزيارات الطبية (الشهر الحالي)</h1>
+          <div class="header-actions">
+            <div class="stats-badge" id="total-count">إجمالي الزيارات: 0</div>
+            <button onclick="openManualBookingModal()" class="btn-manual-add">
+              ➕ إضافة زيارة يدوي
+            </button>
+          </div>
+        </div>
+
+        <!-- أشرطة الفلترة والترتيب -->
+        <div class="controls">
+          <div>
+            <label style="font-weight: bold; font-size: 0.85rem"
+              >التاريخ:</label
+            >
+            <input type="date" id="filter-date" onchange="fetchBookings()" />
+          </div>
+          <div>
+            <label style="font-weight: bold; font-size: 0.85rem">الحالة:</label>
+            <select id="filter-status" onchange="fetchBookings()">
+              <option value="">جميع الحالات</option>
+              <option value="pending">🟡 قيد المراجعة</option>
+              <option value="accepted">🟢 مقبول</option>
+              <option value="rejected">🔴 مرفوض</option>
+            </select>
+          </div>
+
+          <!-- خيار الترتيب المباشر حسب السعر أو الرتبة أو الموعد -->
+          <div>
+            <label style="font-weight: bold; font-size: 0.85rem; color: #168374"
+              >ترتيب الحجوزات حسب:</label
+            >
+            <select
+              id="sort-by"
+              onchange="fetchBookings()"
+              style="font-weight: bold; border-color: #168374"
+            >
+              <option value="price-asc">
+                💵 الأقل سعراً (الأرخص أولاً: 20ج، 25ج، 30ج)
+              </option>
+              <option value="price-desc">💎 الأعلى سعراً (الأغلى أولاً)</option>
+              <option value="rank-desc">🎖️ الرتبة الوظيفية الأعلى أولاً</option>
+              <option value="time-asc">⏱️ أسبقية الحجز (الأول فالأول)</option>
+            </select>
+          </div>
+
+          <button
+            onclick="resetFilter()"
+            style="cursor: pointer; margin-right: auto"
+          >
+            إعادة ضبط
+          </button>
+          <button onclick="fetchBookings()" class="btn-primary">
+            تحديث 🔄
+          </button>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>الكود</th>
+                <th>الطبيب / الممثل</th>
+                <th>الشركة</th>
+                <th>المنتج والمادة الفعالة</th>
+                <th>الجرعة / السعر</th>
+                <th>الهاتف</th>
+                <th>التاريخ والوقت</th>
+                <th>الحالة</th>
+                <th>الإجراءات والتعديل</th>
+              </tr>
+            </thead>
+            <tbody id="bookings-rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ❓ نافذة التأكيد المنبثقة عند تغيير الحالة أو الرفض -->
+    <div id="confirm-modal" class="modal-overlay">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 id="confirm-modal-title">تأكيد الإجراء</h3>
+          <button type="button" class="close-btn" onclick="closeConfirmModal()">
+            &times;
+          </button>
+        </div>
+        <p
+          id="confirm-modal-msg"
+          style="
+            font-size: 1rem;
+            color: #334155;
+            line-height: 1.6;
+            text-align: center;
+            margin-top: 10px;
+          "
+        ></p>
+
+        <div id="confirm-actions-container" class="confirm-btn-group"></div>
+      </div>
+    </div>
+
+    <!-- ✏️ نافذة تعديل بيانات الزيارة -->
+    <div id="edit-modal" class="modal-overlay">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>✏️ تعديل بيانات الزيارة</h3>
+          <button type="button" class="close-btn" onclick="closeEditModal()">
+            &times;
+          </button>
+        </div>
+        <form onsubmit="saveEditedBooking(event)">
+          <input type="hidden" id="e-id" />
+          <div class="settings-grid">
+            <div class="row-group">
+              <div class="field-group">
+                <label>اسم الطبيب / الممثل *</label>
+                <input type="text" id="e-name" required />
+              </div>
+              <div class="field-group">
+                <label>الرتبة / المسمى *</label>
+                <select id="e-rank" required>
+                  <option value="CEO / رئيس مجلس الإدارة">
+                    CEO / رئيس مجلس الإدارة
+                  </option>
+                  <option value="Country Manager / مدير الشركة">
+                    Country Manager / مدير الشركة
+                  </option>
+                  <option value="Business Unit Manager / مدير قطاع">
+                    Business Unit Manager / مدير قطاع
+                  </option>
+                  <option value="Sales Manager / مدير مبيعات">
+                    Sales Manager / مدير مبيعات
+                  </option>
+                  <option value="District Manager / مشرف منطقة">
+                    District Manager / مشرف منطقة
+                  </option>
+                  <option value="Senior Product Specialist / أخصائي منتجات أول">
+                    Senior Product Specialist / أخصائي منتجات أول
+                  </option>
+                  <option value="Senior Medical Rep / أخصائي دعاية أول">
+                    Senior Medical Rep / أخصائي دعاية أول
+                  </option>
+                  <option value="Medical Specialist / أخصائي دعاية طبية">
+                    Medical Specialist / أخصائي دعاية طبية
+                  </option>
+                  <option value="Junior Medical Visitor / زائر طبي جديد">
+                    Junior Medical Visitor / زائر طبي جديد
+                  </option>
+                  <option value="Medical Visitor / زائر طبي">
+                    Medical Visitor / زائر طبي
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row-group">
+              <div class="field-group">
+                <label>الشركة *</label
+                ><input type="text" id="e-company" required />
+              </div>
+              <div class="field-group">
+                <label>اسم المنتج *</label
+                ><input type="text" id="e-product" required />
+              </div>
+            </div>
+
+            <div class="row-group">
+              <div class="field-group">
+                <label>المادة الفعالة *</label
+                ><input type="text" id="e-molecule" required />
+              </div>
+              <div class="field-group">
+                <label>الجرعة *</label
+                ><input type="text" id="e-dosage" required />
+              </div>
+              <div class="field-group">
+                <label>السعر (ج.م) *</label
+                ><input type="number" step="0.01" id="e-price" required />
+              </div>
+            </div>
+
+            <div class="row-group">
+              <div class="field-group">
+                <label>التاريخ *</label
+                ><input type="date" id="e-date" required />
+              </div>
+              <div class="field-group">
+                <label>الوقت *</label>
+                <select id="e-time" required>
+                  <option value="16:00">04:00 مساءً</option>
+                  <option value="17:00">05:00 مساءً</option>
+                  <option value="18:00">06:00 مساءً</option>
+                  <option value="19:00">07:00 مساءً</option>
+                  <option value="20:00">08:00 مساءً</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-success">حفظ التعديلات 💾</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ➕ نافذة الإضافة اليدوية -->
+    <div id="manual-booking-modal" class="modal-overlay">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>➕ إضافة زيارة جديدة مباشرة</h3>
+          <button
+            type="button"
+            class="close-btn"
+            onclick="closeManualBookingModal()"
+          >
+            &times;
+          </button>
+        </div>
+        <form onsubmit="saveManualBooking(event)">
+          <div class="settings-grid">
+            <div class="row-group">
+              <div class="field-group">
+                <label>الاسم *</label><input type="text" id="m-name" required />
+              </div>
+              <div class="field-group">
+                <label>المسمى *</label>
+                <select id="m-rank" required>
+                  <option value="Medical Specialist / أخصائي دعاية طبية">
+                    Medical Specialist / أخصائي دعاية طبية
+                  </option>
+                  <option value="Senior Medical Rep / أخصائي دعاية أول">
+                    Senior Medical Rep / أخصائي دعاية أول
+                  </option>
+                  <option value="Sales Manager / مدير مبيعات">
+                    Sales Manager / مدير مبيعات
+                  </option>
+                </select>
+              </div>
+            </div>
+            <div class="row-group">
+              <div class="field-group">
+                <label>البريد *</label
+                ><input type="email" id="m-email" required />
+              </div>
+              <div class="field-group">
+                <label>الهاتف *</label
+                ><input type="tel" id="m-phone" required />
+              </div>
+            </div>
+            <div class="row-group">
+              <div class="field-group">
+                <label>الشركة *</label
+                ><input type="text" id="m-company" required />
+              </div>
+              <div class="field-group">
+                <label>المنتج *</label
+                ><input type="text" id="m-product" required />
+              </div>
+            </div>
+            <div class="row-group">
+              <div class="field-group">
+                <label>المادة الفعالة *</label
+                ><input type="text" id="m-molecule" required />
+              </div>
+              <div class="field-group">
+                <label>الجرعة *</label
+                ><input type="text" id="m-dosage" required />
+              </div>
+              <div class="field-group">
+                <label>السعر (ج.م) *</label
+                ><input type="number" step="0.01" id="m-price" required />
+              </div>
+            </div>
+            <div class="row-group">
+              <div class="field-group">
+                <label>التاريخ *</label
+                ><input type="date" id="m-date" required />
+              </div>
+              <div class="field-group">
+                <label>الوقت *</label>
+                <select id="m-time" required>
+                  <option value="16:00">04:00 مساءً</option>
+                  <option value="17:00">05:00 مساءً</option>
+                  <option value="18:00">06:00 مساءً</option>
+                  <option value="19:00">07:00 مساءً</option>
+                  <option value="20:00">08:00 مساءً</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn-success">حفظ وتأكيد 💾</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      const SUPABASE_URL = "https://wbsphroluwgmlcqtqfly.supabase.co";
+      const SUPABASE_ANON_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indic3Bocm9sdXdnbWxjcXRxZmx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5NjQ4MzYsImV4cCI6MjEwNjU0MDgzNn0.yPaxMZYbVUxTGOeIGoCOIp_WZ-flg5PXA73lnVzJBbs";
+
+      const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      let allBookingsCache = [];
+
+      const rankWeights = {
+        "CEO / رئيس مجلس الإدارة": 1,
+        "Country Manager / مدير الشركة": 2,
+        "Business Unit Manager / مدير قطاع": 3,
+        "Sales Manager / مدير مبيعات": 4,
+        "District Manager / مشرف منطقة": 5,
+        "Senior Product Specialist / أخصائي منتجات أول": 6,
+        "Senior Medical Rep / أخصائي دعاية أول": 7,
+        "Medical Specialist / أخصائي دعاية طبية": 8,
+        "Junior Medical Visitor / زائر طبي جديد": 9,
+        "Medical Visitor / زائر طبي": 10,
+      };
+
+      async function checkPasscode() {
+        const input = document.getElementById("passcode").value.trim();
+
+        try {
+          const { data } = await db
+            .from("settings")
+            .select("passcode")
+            .eq("id", 1)
+            .single();
+          const validPass = data && data.passcode ? data.passcode : "123456";
+
+          if (input === validPass) {
+            document.getElementById("login-screen").style.display = "none";
+            document.getElementById("dashboard-screen").style.display = "block";
+            fetchBookings();
+          } else {
+            document.getElementById("login-err").style.display = "block";
+          }
+        } catch (err) {
+          document.getElementById("login-screen").style.display = "none";
+          document.getElementById("dashboard-screen").style.display = "block";
+          fetchBookings();
+        }
+      }
+
+      async function fetchBookings() {
+        const tbody = document.getElementById("bookings-rows");
+        const filterDate = document.getElementById("filter-date").value;
+        const filterStatus = document.getElementById("filter-status").value;
+        const sortBy = document.getElementById("sort-by").value;
+
+        tbody.innerHTML =
+          '<tr><td colspan="10" style="text-align:center;">جاري التحميل...</td></tr>';
+
+        try {
+          const now = new Date();
+          const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+
+          let query = db.from("bookings").select("*").gte("Date", startOfMonth);
+
+          if (filterDate) query = query.eq("Date", filterDate);
+          if (filterStatus) query = query.eq("status", filterStatus);
+
+          const { data, error } = await query;
+          if (error) throw error;
+
+          let filtered = data || [];
+
+          filtered.sort((a, b) => {
+            const priceA = parseFloat(a.price) || 0;
+            const priceB = parseFloat(b.price) || 0;
+            const rankA = rankWeights[a.Rank] || 99;
+            const rankB = rankWeights[b.Rank] || 99;
+
+            if (sortBy === "price-asc") {
+              if (priceA !== priceB) return priceA - priceB;
+            } else if (sortBy === "price-desc") {
+              if (priceA !== priceB) return priceB - priceA;
+            } else if (sortBy === "rank-desc") {
+              if (rankA !== rankB) return rankA - rankB;
+            }
+
+            if (a.Date !== b.Date)
+              return (a.Date || "").localeCompare(b.Date || "");
+            return (a.Time || "").localeCompare(b.Time || "");
+          });
+
+          allBookingsCache = filtered;
+          document.getElementById("total-count").textContent =
+            `إجمالي الزيارات: ${allBookingsCache.length}`;
+
+          if (allBookingsCache.length === 0) {
+            tbody.innerHTML =
+              '<tr><td colspan="10" style="text-align:center; color:#94a3b8;">لا توجد بيانات بفلترة البحث الحالية.</td></tr>';
+            return;
+          }
+
+          tbody.innerHTML = "";
+          allBookingsCache.forEach((b, index) => {
+            const tr = document.createElement("tr");
+            const st = b.status || "pending";
+
+            let pillClass = "pill-pending";
+            let pillText = "🟡 قيد المراجعة";
+            if (st === "accepted") {
+              pillClass = "pill-accepted";
+              pillText = "🟢 مقبول";
+            } else if (st === "rejected") {
+              pillClass = "pill-rejected";
+              pillText = "🔴 مرفوض";
+            }
+
+            tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td><span class="code-badge">${escapeHtml(b.code || "---")}</span></td>
+                    <td><strong>${escapeHtml(b.Name || "")}</strong><br><small style="color:#64748b">${escapeHtml(b.Rank || "")}</small></td>
+                    <td>${escapeHtml(b.Company || "")}</td>
+                    <td><strong>${escapeHtml(b.Product || "")}</strong><br><small style="color:#0f766e;">${escapeHtml(b.active_molecule || "")}</small></td>
+                    <td>${escapeHtml(b.dosage || "---")}<br><small style="color:#d97706; font-weight:bold;">${b.price ? parseFloat(b.price).toFixed(2) : "0.00"} ج.م</small></td>
+                    <td>${escapeHtml(b.Phone || "")}</td>
+                    <td>${b.Date || ""}<br><span class="time-badge">${formatTime(b.Time)}</span></td>
+                    <td><span class="status-pill ${pillClass}">${pillText}</span></td>
+                    <td>
+                        <div class="action-btns">
+                            <button onclick="promptAccept(${b.id}, '${escapeHtml(b.Name || "")}')" class="btn-icon-accept" title="قبول">✔ قبول</button>
+                            <button onclick="promptReject(${b.id}, '${escapeHtml(b.Name || "")}')" class="btn-icon-reject" title="رفض">✖ رفض</button>
+                            <button onclick="openEditModal(${b.id})" class="btn-icon-edit" title="تعديل">✏️</button>
+                        </div>
+                    </td>
+                `;
+            tbody.appendChild(tr);
+          });
+        } catch (err) {
+          tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#ef4444;">خطأ: ${err.message}</td></tr>`;
+        }
+      }
+
+      function promptAccept(id, name) {
+        document.getElementById("confirm-modal-title").textContent =
+          "تأكيد قبول الزيارة";
+        document.getElementById("confirm-modal-msg").innerHTML =
+          `هل أنت متأكد من رغبتك في <strong>قبول</strong> زيارة (${name})؟`;
+
+        const container = document.getElementById("confirm-actions-container");
+        container.innerHTML = `
+            <button onclick="executeStatusUpdate(${id}, 'accepted')" class="btn-confirm-accept">نعم، تأكيد قبول الزيارة 🟢</button>
+        `;
+        document.getElementById("confirm-modal").style.display = "flex";
+      }
+
+      function promptReject(id, name) {
+        document.getElementById("confirm-modal-title").textContent =
+          "تأكيد رفض الزيارة";
+        document.getElementById("confirm-modal-msg").innerHTML =
+          `اختر خيار الرفض المناسب لـ (${name}):`;
+
+        const container = document.getElementById("confirm-actions-container");
+        container.innerHTML = `
+            <button onclick="executeStatusUpdate(${id}, 'rejected')" class="btn-confirm-reject-keep">🔴 رفض (تغيير الحالة لـ "مرفوض" وتظل البيانات بكارت المندوب)</button>
+            <button onclick="executeRejectAndClearData(${id})" class="btn-confirm-reject-clear">🧹 رفض وتفريغ التفاصيل لتخفيف الحجم (مع بقاء بطاقة "مرفوض" بكوده)</button>
+            <button onclick="executeDeleteRecord(${id})" class="btn-confirm-reject-delete">🗑️ حذف السجل نهائياً (في حالة الحجوزات التجريبية أو الخاطئة)</button>
+        `;
+        document.getElementById("confirm-modal").style.display = "flex";
+      }
+
+      function closeConfirmModal() {
+        document.getElementById("confirm-modal").style.display = "none";
+      }
+
+      async function executeStatusUpdate(id, newStatus) {
+        try {
+          const { error } = await db
+            .from("bookings")
+            .update({ status: newStatus })
+            .eq("id", id);
+          if (error) throw error;
+          closeConfirmModal();
+          fetchBookings();
+        } catch (e) {
+          alert("تعذر تحديث الحالة: " + e.message);
+        }
+      }
+
+      // تفريغ البيانات الزائدة لتقليل الحجم دون حذف البطاقة
+      async function executeRejectAndClearData(id) {
+        try {
+          const { error } = await db
+            .from("bookings")
+            .update({
+              status: "rejected",
+              accompanying_reps: null,
+              product_details: null,
+            })
+            .eq("id", id);
+          if (error) throw error;
+          closeConfirmModal();
+          fetchBookings();
+        } catch (e) {
+          alert("تعذر تحديث البيانات: " + e.message);
+        }
+      }
+
+      async function executeDeleteRecord(id) {
+        try {
+          const { error } = await db.from("bookings").delete().eq("id", id);
+          if (error) throw error;
+          closeConfirmModal();
+          fetchBookings();
+        } catch (e) {
+          alert("تعذر حذف السجل: " + e.message);
+        }
+      }
+
+      function openEditModal(id) {
+        const item = allBookingsCache.find((b) => b.id === id);
+        if (!item) return;
+
+        document.getElementById("e-id").value = item.id;
+        document.getElementById("e-name").value = item.Name || "";
+        document.getElementById("e-rank").value =
+          item.Rank || "Medical Specialist / أخصائي دعاية طبية";
+        document.getElementById("e-company").value = item.Company || "";
+        document.getElementById("e-product").value = item.Product || "";
+        document.getElementById("e-molecule").value =
+          item.active_molecule || "";
+        document.getElementById("e-dosage").value = item.dosage || "";
+        document.getElementById("e-price").value = item.price || 0;
+        document.getElementById("e-date").value = item.Date || "";
+        document.getElementById("e-time").value = item.Time || "16:00";
+
+        document.getElementById("edit-modal").style.display = "flex";
+      }
+
+      function closeEditModal() {
+        document.getElementById("edit-modal").style.display = "none";
+      }
+
+      async function saveEditedBooking(e) {
+        e.preventDefault();
+        const id = document.getElementById("e-id").value;
+
+        const updatedData = {
+          Name: document.getElementById("e-name").value.trim(),
+          Rank: document.getElementById("e-rank").value,
+          Company: document.getElementById("e-company").value.trim(),
+          Product: document.getElementById("e-product").value.trim(),
+          active_molecule: document.getElementById("e-molecule").value.trim(),
+          dosage: document.getElementById("e-dosage").value.trim(),
+          price: parseFloat(document.getElementById("e-price").value) || 0,
+          Date: document.getElementById("e-date").value,
+          Time: document.getElementById("e-time").value,
+        };
+
+        try {
+          const { error } = await db
+            .from("bookings")
+            .update(updatedData)
+            .eq("id", id);
+          if (error) throw error;
+          closeEditModal();
+          fetchBookings();
+        } catch (err) {
+          alert("تعذر الحفظ: " + err.message);
+        }
+      }
+
+      function openManualBookingModal() {
+        document.getElementById("manual-booking-modal").style.display = "flex";
+      }
+      function closeManualBookingModal() {
+        document.getElementById("manual-booking-modal").style.display = "none";
+      }
+
+      async function saveManualBooking(e) {
+        e.preventDefault();
+        const manualCode =
+          "DOC-" + Math.random().toString(36).substring(2, 7).toUpperCase();
+
+        try {
+          const { error } = await db.from("bookings").insert([
+            {
+              Name: document.getElementById("m-name").value.trim(),
+              Rank: document.getElementById("m-rank").value,
+              Email: document.getElementById("m-email").value.trim(),
+              Phone: document.getElementById("m-phone").value.trim(),
+              Company: document.getElementById("m-company").value.trim(),
+              Product: document.getElementById("m-product").value.trim(),
+              active_molecule: document
+                .getElementById("m-molecule")
+                .value.trim(),
+              dosage: document.getElementById("m-dosage").value.trim(),
+              price: parseFloat(document.getElementById("m-price").value) || 0,
+              Date: document.getElementById("m-date").value,
+              Time: document.getElementById("m-time").value,
+              code: manualCode,
+              status: "pending",
+            },
+          ]);
+          if (error) throw error;
+
+          closeManualBookingModal();
+          fetchBookings();
+        } catch (err) {
+          alert("تعذر الإضافة: " + err.message);
+        }
+      }
+
+      function resetFilter() {
+        document.getElementById("filter-date").value = "";
+        document.getElementById("filter-status").value = "";
+        document.getElementById("sort-by").value = "price-asc";
+        fetchBookings();
+      }
+
+      function formatTime(timeStr) {
+        if (!timeStr) return "";
+        const [hour] = timeStr.split(":");
+        const h = parseInt(hour, 10);
+        return h >= 12
+          ? `${h === 12 ? 12 : h - 12}:00 مساءً`
+          : `${h}:00 صباحاً`;
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.innerText = text;
+        return div.innerHTML;
+      }
+    </script>
+  </body>
+</html>

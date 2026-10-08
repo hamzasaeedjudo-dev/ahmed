@@ -1,0 +1,1027 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>بوابة حجز الزيارات الطبية - د. أحمد محمد سعيد</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                dark: "#051815",
+                card: "#0a2f28",
+                teal: "#168374",
+                lightTeal: "#1fa391",
+                gold: "#f1ba33",
+                goldHover: "#d9a320",
+                accent: "#22d3ee",
+              },
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- Flatpickr Datepicker CSS & JS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ar.js"></script>
+
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+      body {
+        background: radial-gradient(
+          circle at top right,
+          #0d3d34 0%,
+          #051815 60%,
+          #020d0b 100%
+        );
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        min-height: 100vh;
+      }
+
+      .glass-panel {
+        background: rgba(10, 47, 40, 0.88);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(241, 186, 51, 0.35);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      }
+
+      /* 🖼️ صورة الوترمارك المحدثة لكارت الـ Glass - تغطي كامل العرض والارتفاع بشفافية 10% */
+      .glass-form-watermark {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url("WhatsApp Image 2026-10-03 at 11.32.50 AM.jpeg");
+        background-size: 100% 100%;
+        background-position: center;
+        background-repeat: no-repeat;
+        opacity: 0.1;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .gold-glow {
+        box-shadow: 0 0 20px rgba(241, 186, 51, 0.25);
+      }
+
+      .step-node.active {
+        background-color: #f1ba33;
+        color: #051815;
+        box-shadow: 0 0 15px rgba(241, 186, 51, 0.6);
+      }
+
+      .step-node.completed {
+        background-color: #168374;
+        color: #ffffff;
+      }
+
+      .form-input {
+        background: rgba(5, 24, 21, 0.85);
+        border: 1px solid rgba(22, 131, 116, 0.6);
+        color: #ffffff;
+        transition: all 0.3s ease;
+      }
+
+      .form-input:focus {
+        border-color: #f1ba33;
+        box-shadow: 0 0 12px rgba(241, 186, 51, 0.35);
+        outline: none;
+      }
+
+      .flatpickr-calendar {
+        background: #0a2f28 !important;
+        border: 1px solid #f1ba33 !important;
+        box-shadow: 0 20px 30px rgba(0, 0, 0, 0.5) !important;
+      }
+      .flatpickr-day.selected {
+        background: #f1ba33 !important;
+        color: #051815 !important;
+        font-weight: bold !important;
+      }
+    </style>
+  </head>
+  <body
+    class="text-slate-100 flex items-center justify-center p-4 md:p-8 relative overflow-x-hidden"
+  >
+    <div
+      class="w-full max-w-6xl relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start my-auto"
+    >
+      <!-- 1️⃣ Order 1: اللوجو العلوي للدكتور (ارتفاع 250px وصورة مخصصة) -->
+      <div class="lg:col-span-4 order-1 w-full">
+        <div
+          class="glass-panel rounded-2xl p-2 overflow-hidden border-2 border-brand-gold/40 relative w-full h-[250px] bg-white flex items-center justify-center"
+          id="header-box"
+        >
+          <img
+            src="WhatsApp Image 2026-10-03 at 11.23.49 AM.jpeg"
+            alt="عيادة أ.د أحمد محمد سعيد"
+            class="w-full h-full object-contain block rounded-xl"
+            onerror="
+              this.onerror = null;
+              document.getElementById('header-box').innerHTML =
+                '<div class=\'w-full h-full p-6 bg-gradient-to-br from-brand-card to-brand-teal flex flex-col justify-center items-center text-center rounded-xl\'><h2 class=\'text-xl font-bold text-brand-gold mb-1\'>عيادة أ.د / أحمد محمد سعيد</h2><p class=\'text-xs text-emerald-100\'>مدرس وجراح العظام والمفاصل - استشاري المفاصل الصناعية</p></div>';
+            "
+          />
+        </div>
+      </div>
+
+      <!-- 2️⃣ Order 2: كارت الـ Glass الرئيسي لإدخال البيانات (ارتفاع 730px متجاوب) -->
+      <div class="lg:col-span-8 order-2 lg:row-span-2 w-full">
+        <div
+          class="glass-panel rounded-3xl p-6 md:p-8 relative overflow-hidden min-h-[730px] flex flex-col justify-between"
+        >
+          <!-- الوترمارك الخلفية لكارت الـ Glass -->
+          <div class="glass-form-watermark" id="glass-watermark-bg"></div>
+          <img
+            src="WhatsApp Image 2026-10-03 at 11.32.50 AM.jpeg"
+            class="hidden"
+            onerror="
+              document.getElementById('glass-watermark-bg').style.display =
+                'none'
+            "
+          />
+
+          <!-- المحتوى الأمامي للكارت -->
+          <div class="relative z-10 flex-1 flex flex-col justify-between">
+            <div>
+              <!-- شريط الاسترجاع السريع بالكود -->
+              <div
+                class="mb-8 p-4 rounded-2xl bg-brand-teal/20 border border-brand-teal/40 flex flex-col md:flex-row items-center justify-between gap-4"
+              >
+                <div class="text-sm">
+                  <span class="font-bold text-brand-gold block mb-0.5"
+                    >🔑 هل قمت بالحجز سابقاً؟</span
+                  >
+                  <p class="text-slate-300 text-xs">
+                    أدخل كودك الخاص لمتابعة حالة القبول/الرفض أو استرجاع بياناتك
+                    تلقائياً:
+                  </p>
+                </div>
+                <div class="flex w-full md:w-auto gap-2">
+                  <input
+                    type="text"
+                    id="lookup-code"
+                    placeholder="REP-XXXXXX"
+                    class="form-input px-3 py-2 rounded-xl text-center uppercase font-bold tracking-wider text-sm w-full md:w-36"
+                  />
+                  <button
+                    onclick="fetchByCode()"
+                    class="bg-brand-gold hover:bg-brand-goldHover text-brand-dark px-4 py-2 rounded-xl font-bold text-sm transition-all whitespace-nowrap"
+                  >
+                    استرجاع
+                  </button>
+                </div>
+              </div>
+
+              <!-- مؤشر الخطوات التفاعلي (Step Indicator) -->
+              <div class="flex items-center justify-between mb-8 relative">
+                <div
+                  class="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1 bg-slate-800 -z-10 rounded-full"
+                ></div>
+                <div
+                  id="line-progress"
+                  class="absolute right-0 top-1/2 -translate-y-1/2 h-1 bg-brand-gold -z-10 rounded-full transition-all duration-500 w-0"
+                ></div>
+
+                <div class="flex flex-col items-center gap-2">
+                  <div
+                    id="node-1"
+                    class="step-node active w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border-2 border-brand-gold transition-all duration-300"
+                  >
+                    1
+                  </div>
+                  <span class="text-xs font-semibold text-brand-gold"
+                    >البيانات الأساسية</span
+                  >
+                </div>
+
+                <div class="flex flex-col items-center gap-2">
+                  <div
+                    id="node-2"
+                    class="step-node w-10 h-10 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-bold text-sm border-2 border-slate-700 transition-all duration-300"
+                  >
+                    2
+                  </div>
+                  <span class="text-xs font-semibold text-slate-400"
+                    >تفاصيل المستحضر</span
+                  >
+                </div>
+
+                <div class="flex flex-col items-center gap-2">
+                  <div
+                    id="node-3"
+                    class="step-node w-10 h-10 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-bold text-sm border-2 border-slate-700 transition-all duration-300"
+                  >
+                    3
+                  </div>
+                  <span class="text-xs font-semibold text-slate-400"
+                    >الموعد والتأكيد</span
+                  >
+                </div>
+              </div>
+
+              <!-- النموذج التفاعلي -->
+              <form id="wizard-form" onsubmit="handleFormSubmit(event)">
+                <!-- STEP 1: البيانات الأساسية -->
+                <div id="step-1-content" class="space-y-4">
+                  <h4
+                    class="text-base font-bold text-brand-gold border-b border-slate-800 pb-2"
+                  >
+                    الخطوة 1: البيانات الشخصية والوظيفية
+                  </h4>
+
+                  <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1"
+                      >اسم الطبيب / ممثل الشركة بالكامل *</label
+                    >
+                    <input
+                      type="text"
+                      id="name"
+                      required
+                      placeholder="أدخل اسمك الثلاثي"
+                      class="form-input w-full px-4 py-3 rounded-xl text-sm"
+                      oninput="updateLiveTicket()"
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1"
+                      >المسمى الوظيفي / الرتبة *</label
+                    >
+                    <select
+                      id="rank"
+                      required
+                      class="form-input w-full px-4 py-3 rounded-xl text-sm"
+                      onchange="updateLiveTicket()"
+                    >
+                      <option value="">اختر المسمى الوظيفي</option>
+                      <option value="CEO / رئيس مجلس الإدارة">
+                        CEO / رئيس مجلس الإدارة
+                      </option>
+                      <option value="Country Manager / مدير الشركة">
+                        Country Manager / مدير الشركة
+                      </option>
+                      <option value="Business Unit Manager / مدير قطاع">
+                        Business Unit Manager / مدير قطاع
+                      </option>
+                      <option value="Sales Manager / مدير مبيعات">
+                        Sales Manager / مدير مبيعات
+                      </option>
+                      <option value="District Manager / مشرف منطقة">
+                        District Manager / مشرف منطقة
+                      </option>
+                      <option
+                        value="Senior Product Specialist / أخصائي منتجات أول"
+                      >
+                        Senior Product Specialist / أخصائي منتجات أول
+                      </option>
+                      <option value="Senior Medical Rep / أخصائي دعاية أول">
+                        Senior Medical Rep / أخصائي دعاية أول
+                      </option>
+                      <option value="Medical Specialist / أخصائي دعاية طبية">
+                        Medical Specialist / أخصائي دعاية طبية
+                      </option>
+                      <option value="Junior Medical Visitor / زائر طبي جديد">
+                        Junior Medical Visitor / زائر طبي جديد
+                      </option>
+                      <option value="Medical Visitor / زائر طبي">
+                        Medical Visitor / زائر طبي
+                      </option>
+                    </select>
+                  </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-xs font-bold text-slate-300 mb-1"
+                        >البريد الإلكتروني *</label
+                      >
+                      <input
+                        type="email"
+                        id="email"
+                        required
+                        placeholder="name@company.com"
+                        class="form-input w-full px-4 py-3 rounded-xl text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-bold text-slate-300 mb-1"
+                        >رقم الهاتف / الواتساب *</label
+                      >
+                      <input
+                        type="tel"
+                        id="phone"
+                        required
+                        placeholder="010XXXXXXXX"
+                        class="form-input w-full px-4 py-3 rounded-xl text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1"
+                      >اسم الشركة *</label
+                    >
+                    <input
+                      type="text"
+                      id="company"
+                      required
+                      placeholder="اسم شركة الأدوية أو المستلزمات"
+                      class="form-input w-full px-4 py-3 rounded-xl text-sm"
+                      oninput="updateLiveTicket()"
+                    />
+                  </div>
+
+                  <div class="pt-6 flex justify-end">
+                    <button
+                      type="button"
+                      onclick="goToStep(2)"
+                      class="bg-brand-gold hover:bg-brand-goldHover text-brand-dark font-bold px-6 py-3 rounded-xl text-sm transition-all flex items-center gap-2"
+                    >
+                      التالي: تفاصيل المستحضر &larr;
+                    </button>
+                  </div>
+                </div>
+
+                <!-- STEP 2: تفاصيل المستحضر والمرافقين -->
+                <div id="step-2-content" class="space-y-4 hidden">
+                  <h4
+                    class="text-base font-bold text-brand-gold border-b border-slate-800 pb-2"
+                  >
+                    الخطوة 2: بيانات المنتج والمرافقين
+                  </h4>
+
+                  <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1"
+                      >اسم المنتج / المستحضر *</label
+                    >
+                    <input
+                      type="text"
+                      id="product"
+                      required
+                      placeholder="اسم المستحضر العلمي/التجاري"
+                      class="form-input w-full px-4 py-3 rounded-xl text-sm"
+                      oninput="updateLiveTicket()"
+                    />
+                  </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <label class="block text-xs font-bold text-slate-300 mb-1"
+                        >المادة الفعالة *</label
+                      >
+                      <input
+                        type="text"
+                        id="active_molecule"
+                        required
+                        placeholder="Active Molecule"
+                        class="form-input w-full px-3 py-3 rounded-xl text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-bold text-slate-300 mb-1"
+                        >الجرعة *</label
+                      >
+                      <input
+                        type="text"
+                        id="dosage"
+                        required
+                        placeholder="مثال: 500mg"
+                        class="form-input w-full px-3 py-3 rounded-xl text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-bold text-slate-300 mb-1"
+                        >السعر في السوق (ج.م) *</label
+                      >
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        id="price"
+                        required
+                        placeholder="0.00"
+                        class="form-input w-full px-3 py-3 rounded-xl text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-2"
+                      >👥 المرافقون في الزيارة (إن وجدوا):</label
+                    >
+                    <div id="acc-container" class="space-y-2 mb-2"></div>
+                    <button
+                      type="button"
+                      onclick="addAccField()"
+                      class="w-full py-2 border border-dashed border-brand-gold/50 text-brand-gold hover:bg-brand-gold/10 rounded-xl text-xs font-bold transition-all"
+                    >
+                      + إضافة مرافق
+                    </button>
+                  </div>
+
+                  <div class="pt-6 flex justify-between">
+                    <button
+                      type="button"
+                      onclick="goToStep(1)"
+                      class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-6 py-3 rounded-xl text-sm transition-all"
+                    >
+                      &rarr; السابق
+                    </button>
+                    <button
+                      type="button"
+                      onclick="goToStep(3)"
+                      class="bg-brand-gold hover:bg-brand-goldHover text-brand-dark font-bold px-6 py-3 rounded-xl text-sm transition-all flex items-center gap-2"
+                    >
+                      التالي: اختيار الموعد &larr;
+                    </button>
+                  </div>
+                </div>
+
+                <!-- STEP 3: الموعد والتأكيد النهائي -->
+                <div id="step-3-content" class="space-y-4 hidden">
+                  <h4
+                    class="text-base font-bold text-brand-gold border-b border-slate-800 pb-2"
+                  >
+                    الخطوة 3: تحديد موعد الزيارة والتأكيد
+                  </h4>
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-xs font-bold text-slate-300 mb-1"
+                        >تاريخ الزيارة *</label
+                      >
+                      <input
+                        type="text"
+                        id="date"
+                        required
+                        readonly
+                        placeholder="اختر من التقويم..."
+                        class="form-input w-full px-4 py-3 rounded-xl text-sm cursor-pointer"
+                        onchange="updateLiveTicket()"
+                      />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-bold text-slate-300 mb-1"
+                        >وقت الزيارة *</label
+                      >
+                      <select
+                        id="time"
+                        required
+                        class="form-input w-full px-4 py-3 rounded-xl text-sm"
+                        onchange="updateLiveTicket()"
+                      >
+                        <option value="">اختر الوقت</option>
+                        <option value="16:00">04:00 مساءً</option>
+                        <option value="17:00">05:00 مساءً</option>
+                        <option value="18:00">06:00 مساءً</option>
+                        <option value="19:00">07:00 مساءً</option>
+                        <option value="20:00">08:00 مساءً</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div
+                    class="p-4 rounded-xl bg-emerald-950/50 border border-emerald-500/30 text-xs text-emerald-200 leading-relaxed"
+                  >
+                    📌 <strong>تنبيه:</strong> بعد إرسال الطلب، ستحصل على كود
+                    خاص يمكنك استخدامه لمتابعة حالة القبول أو الرفض في أي وقت من
+                    الواجهة الرئيسية.
+                  </div>
+
+                  <div class="pt-6 flex justify-between">
+                    <button
+                      type="button"
+                      onclick="goToStep(2)"
+                      class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-6 py-3 rounded-xl text-sm transition-all"
+                    >
+                      &rarr; السابق
+                    </button>
+                    <button
+                      type="submit"
+                      id="submit-btn"
+                      class="bg-gradient-to-r from-brand-gold to-amber-500 hover:from-amber-500 hover:to-brand-gold text-brand-dark font-black px-8 py-3 rounded-xl text-sm shadow-lg gold-glow transition-all"
+                    >
+                      تأكيد وإرسال طلب الزيارة ✨
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3️⃣ Order 3: بطاقة التذكرة التفاعلية الحية (بدون السعر والمادة الفعالة والجرعة) -->
+      <div class="lg:col-span-4 order-3 w-full">
+        <div
+          class="glass-panel rounded-2xl p-6 relative overflow-hidden border-t-4 border-t-brand-gold gold-glow w-full"
+        >
+          <div
+            class="flex items-center justify-between pb-4 border-b border-slate-700/60 mb-4"
+          >
+            <div>
+              <span
+                class="text-xs uppercase tracking-widest text-brand-gold font-bold"
+                >بطاقة المعاينة الحية</span
+              >
+              <h3 class="text-lg font-bold text-white">تذكرة الزيارة الطبية</h3>
+            </div>
+            <span
+              id="ticket-status-badge"
+              class="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30"
+            >
+              جاري التعبئة...
+            </span>
+          </div>
+
+          <div class="space-y-3 text-sm">
+            <div
+              class="flex justify-between items-center py-1 border-b border-slate-800"
+            >
+              <span class="text-slate-400">الطبيب / الممثل:</span>
+              <span id="preview-name" class="font-semibold text-white"
+                >---</span
+              >
+            </div>
+            <div
+              class="flex justify-between items-center py-1 border-b border-slate-800"
+            >
+              <span class="text-slate-400">الرتبة الوظيفية:</span>
+              <span id="preview-rank" class="font-semibold text-brand-teal"
+                >---</span
+              >
+            </div>
+            <div
+              class="flex justify-between items-center py-1 border-b border-slate-800"
+            >
+              <span class="text-slate-400">الشركة:</span>
+              <span id="preview-company" class="font-semibold text-white"
+                >---</span
+              >
+            </div>
+            <div
+              class="flex justify-between items-center py-1 border-b border-slate-800"
+            >
+              <span class="text-slate-400">اسم المنتج:</span>
+              <span id="preview-product" class="font-semibold text-brand-gold"
+                >---</span
+              >
+            </div>
+            <div class="flex justify-between items-center pt-2">
+              <span class="text-slate-400">تاريخ وساعة الموعد:</span>
+              <span id="preview-datetime" class="font-bold text-emerald-400"
+                >لم يحدد بعد</span
+              >
+            </div>
+          </div>
+
+          <div
+            class="mt-5 pt-3 border-t border-dashed border-slate-700 flex justify-between items-center text-xs text-slate-400"
+          >
+            <span
+              >الكود:
+              <strong id="preview-code" class="text-brand-gold tracking-wider"
+                >تلقائي</strong
+              ></span
+            >
+            <span id="preview-acc-count">0 مرافقين</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal الكود المنبثق -->
+    <div
+      id="success-modal"
+      class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden"
+    >
+      <div
+        class="glass-panel max-w-md w-full rounded-3xl p-6 text-center border-2 border-brand-gold gold-glow relative overflow-hidden"
+      >
+        <div class="glass-form-watermark"></div>
+
+        <div class="relative z-10">
+          <div
+            class="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 border border-emerald-500/30"
+          >
+            ✓
+          </div>
+          <h3 class="text-xl font-bold text-white mb-2">
+            تم تسجيل طلب الزيارة بنجاح!
+          </h3>
+          <p class="text-xs text-slate-300 mb-4">
+            احفظ كود استرجاع البيانات المخصص لك لمتابعة حالة قبول/رفض الزيارة:
+          </p>
+
+          <div
+            id="modal-code"
+            class="text-2xl font-black tracking-widest text-brand-gold bg-brand-dark/90 py-3 px-6 rounded-2xl border border-brand-gold/40 mb-4"
+          >
+            REP-XXXXXX
+          </div>
+
+          <p class="text-xs text-amber-400 font-semibold mb-6">
+            📸 يرجى أخذ لقطة شاشة (Screenshot) للكود لتسهيل الاستعلام لاحقاً.
+          </p>
+
+          <button
+            onclick="closeSuccessModal()"
+            class="w-full bg-brand-gold hover:bg-brand-goldHover text-brand-dark font-bold py-3 rounded-xl text-sm transition-all"
+          >
+            تم الحفظ والمتابعة
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Glass Toast Notification (Replaces Browser Alert) -->
+    <div
+      id="toast-notification"
+      class="fixed bottom-6 right-6 left-6 md:left-auto md:w-96 z-50 hidden items-center justify-between p-4 rounded-2xl glass-panel border border-brand-gold/50 shadow-2xl transition-all"
+    >
+      <div class="flex items-center gap-3">
+        <span id="toast-icon" class="text-xl">ℹ️</span>
+        <p
+          id="toast-message"
+          class="text-xs font-semibold text-slate-100 leading-relaxed"
+        >
+          رسالة الإشعار
+        </p>
+      </div>
+      <button
+        onclick="closeToast()"
+        class="text-slate-400 hover:text-white font-bold text-sm mr-2"
+      >
+        &times;
+      </button>
+    </div>
+
+    <script>
+      const SUPABASE_URL = "https://wbsphroluwgmlcqtqfly.supabase.co";
+      const SUPABASE_ANON_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indic3Bocm9sdXdnbWxjcXRxZmx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5NjQ4MzYsImV4cCI6MjE0NjU0MDgzNn0.yPaxMZYbVUxTGOeIGoCOIp_WZ-flg5PXA73lnVzJBbs";
+      const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      let currentStep = 1;
+      let accCount = 0;
+      let activeRecord = null;
+
+      function showToast(message, type = "info") {
+        const toast = document.getElementById("toast-notification");
+        const toastMsg = document.getElementById("toast-message");
+        const toastIcon = document.getElementById("toast-icon");
+        if (!toast || !toastMsg) return;
+
+        toastMsg.textContent = message;
+        if (type === "error") {
+          toastIcon.textContent = "⚠️";
+        } else if (type === "success") {
+          toastIcon.textContent = "✅";
+        } else {
+          toastIcon.textContent = "ℹ️";
+        }
+
+        toast.classList.remove("hidden");
+        toast.classList.add("flex");
+        setTimeout(() => {
+          closeToast();
+        }, 5000);
+      }
+
+      function closeToast() {
+        const toast = document.getElementById("toast-notification");
+        if (toast) {
+          toast.classList.add("hidden");
+          toast.classList.remove("flex");
+        }
+      }
+
+      function goToStep(step) {
+        if (step > currentStep) {
+          if (currentStep === 1) {
+            if (
+              !document.getElementById("name").value ||
+              !document.getElementById("rank").value ||
+              !document.getElementById("email").value ||
+              !document.getElementById("phone").value ||
+              !document.getElementById("company").value
+            ) {
+              showToast(
+                "يرجى تعبئة كافة حقول الخطوة الأولى الإجبارية",
+                "error",
+              );
+              return;
+            }
+          } else if (currentStep === 2) {
+            if (
+              !document.getElementById("product").value ||
+              !document.getElementById("active_molecule").value ||
+              !document.getElementById("dosage").value ||
+              !document.getElementById("price").value
+            ) {
+              showToast("يرجى تعبئة كافة حقول المستحضر والسعر", "error");
+              return;
+            }
+          }
+        }
+
+        currentStep = step;
+
+        document
+          .getElementById("step-1-content")
+          .classList.toggle("hidden", step !== 1);
+        document
+          .getElementById("step-2-content")
+          .classList.toggle("hidden", step !== 2);
+        document
+          .getElementById("step-3-content")
+          .classList.toggle("hidden", step !== 3);
+
+        const line = document.getElementById("line-progress");
+        if (step === 1) line.style.width = "0%";
+        else if (step === 2) line.style.width = "50%";
+        else if (step === 3) line.style.width = "100%";
+
+        for (let i = 1; i <= 3; i++) {
+          const node = document.getElementById(`node-${i}`);
+          if (i < step) {
+            node.className =
+              "step-node completed w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border-2 border-brand-teal";
+            node.textContent = "✓";
+          } else if (i === step) {
+            node.className =
+              "step-node active w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border-2 border-brand-gold";
+            node.textContent = i;
+          } else {
+            node.className =
+              "step-node w-10 h-10 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-bold text-sm border-2 border-slate-700";
+            node.textContent = i;
+          }
+        }
+      }
+
+      function updateLiveTicket() {
+        document.getElementById("preview-name").textContent =
+          document.getElementById("name").value || "---";
+        document.getElementById("preview-rank").textContent =
+          document.getElementById("rank").value || "---";
+        document.getElementById("preview-company").textContent =
+          document.getElementById("company").value || "---";
+        document.getElementById("preview-product").textContent =
+          document.getElementById("product").value || "---";
+
+        const d = document.getElementById("date").value;
+        const t = document.getElementById("time").value;
+        if (d && t) {
+          document.getElementById("preview-datetime").textContent =
+            `${d} - ${formatTime(t)}`;
+        } else if (d) {
+          document.getElementById("preview-datetime").textContent = d;
+        } else {
+          document.getElementById("preview-datetime").textContent =
+            "لم يحدد بعد";
+        }
+      }
+
+      function addAccField() {
+        accCount++;
+        document.getElementById("preview-acc-count").textContent =
+          `${accCount} مرافقين`;
+        const container = document.getElementById("acc-container");
+        const div = document.createElement("div");
+        div.className =
+          "p-3 rounded-xl bg-slate-900/80 border border-slate-700 space-y-2 text-xs relative z-10";
+        div.id = `acc-row-${accCount}`;
+        div.innerHTML = `
+                <div class="flex justify-between items-center text-brand-gold font-bold">
+                    <span>مرافق #${accCount}</span>
+                    <button type="button" onclick="removeAcc(${accCount})" class="text-rose-400 hover:text-rose-300">إزالة</button>
+                </div>
+                <input type="text" class="acc-name form-input w-full px-2 py-1.5 rounded-lg" placeholder="اسم المرافق" required />
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="tel" class="acc-phone form-input px-2 py-1.5 rounded-lg" placeholder="الهاتف" required />
+                    <input type="email" class="acc-email form-input px-2 py-1.5 rounded-lg" placeholder="البريد" required />
+                </div>
+            `;
+        container.appendChild(div);
+      }
+
+      function removeAcc(id) {
+        const el = document.getElementById(`acc-row-${id}`);
+        if (el) el.remove();
+        accCount = Math.max(0, accCount - 1);
+        document.getElementById("preview-acc-count").textContent =
+          `${accCount} مرافقين`;
+      }
+
+      async function fetchByCode() {
+        const code = document
+          .getElementById("lookup-code")
+          .value.trim()
+          .toUpperCase();
+        if (!code) {
+          showToast("أدخل الكود أولاً للاستعلام", "info");
+          return;
+        }
+
+        try {
+          const { data, error } = await db
+            .from("bookings")
+            .select("*")
+            .eq("code", code)
+            .order("id", { ascending: false })
+            .limit(1);
+          if (error) throw error;
+
+          if (data && data.length > 0) {
+            activeRecord = data[0];
+            document.getElementById("name").value = activeRecord.Name || "";
+            document.getElementById("rank").value = activeRecord.Rank || "";
+            document.getElementById("email").value = activeRecord.Email || "";
+            document.getElementById("phone").value = activeRecord.Phone || "";
+            document.getElementById("company").value =
+              activeRecord.Company || "";
+            document.getElementById("product").value =
+              activeRecord.Product || "";
+            document.getElementById("active_molecule").value =
+              activeRecord.active_molecule || "";
+            document.getElementById("dosage").value = activeRecord.dosage || "";
+            document.getElementById("price").value = activeRecord.price || "";
+            document.getElementById("date").value = activeRecord.Date || "";
+            document.getElementById("time").value = activeRecord.Time || "";
+
+            document.getElementById("preview-code").textContent =
+              activeRecord.code;
+
+            const badge = document.getElementById("ticket-status-badge");
+            const st = activeRecord.status || "pending";
+            if (st === "accepted") {
+              badge.textContent = "🟢 تم القبول";
+              badge.className =
+                "px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+            } else if (st === "rejected") {
+              badge.textContent = "🔴 تم الرفض";
+              badge.className =
+                "px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30";
+            } else {
+              badge.textContent = "🟡 قيد المراجعة";
+              badge.className =
+                "px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30";
+            }
+
+            updateLiveTicket();
+            showToast(
+              "تم استرجاع بياناتك بنجاح في كارت التذكرة ورابط الحجز!",
+              "success",
+            );
+          } else {
+            showToast("الكود غير موجود بجدول الحجوزات", "error");
+          }
+        } catch (err) {
+          showToast("خطأ أثناء البحث: " + err.message, "error");
+        }
+      }
+
+      function generateUniqueCode() {
+        const timePart = Date.now().toString(36).slice(-3).toUpperCase();
+        const randPart = Math.random()
+          .toString(36)
+          .substring(2, 5)
+          .toUpperCase();
+        return `REP-${timePart}${randPart}`;
+      }
+
+      async function handleFormSubmit(e) {
+        e.preventDefault();
+        const dateVal = document.getElementById("date").value;
+        if (!dateVal) {
+          showToast("يرجى تحديد تاريخ الزيارة من التقويم أولاً", "error");
+          return;
+        }
+
+        const submitBtn = document.getElementById("submit-btn");
+        submitBtn.disabled = true;
+        submitBtn.textContent = "جاري حفظ الطلب...";
+
+        const nameVal = document.getElementById("name").value.trim();
+        const rankVal = document.getElementById("rank").value;
+        const emailVal = document.getElementById("email").value.trim();
+        const phoneVal = document.getElementById("phone").value.trim();
+        const companyVal = document.getElementById("company").value.trim();
+        const productVal = document.getElementById("product").value.trim();
+        const moleculeVal = document
+          .getElementById("active_molecule")
+          .value.trim();
+        const dosageVal = document.getElementById("dosage").value.trim();
+        const priceVal =
+          parseFloat(document.getElementById("price").value) || 0;
+        const timeVal = document.getElementById("time").value;
+
+        const accReps = [];
+        document.querySelectorAll("#acc-container > div").forEach((row) => {
+          accReps.push({
+            name: row.querySelector(".acc-name").value,
+            phone: row.querySelector(".acc-phone").value,
+            email: row.querySelector(".acc-email").value,
+          });
+        });
+
+        try {
+          let codeToUse = activeRecord
+            ? activeRecord.code
+            : generateUniqueCode();
+
+          const { error } = await db.from("bookings").insert([
+            {
+              Name: nameVal,
+              Rank: rankVal,
+              Email: emailVal,
+              Phone: phoneVal,
+              Company: companyVal,
+              Product: productVal,
+              active_molecule: moleculeVal,
+              dosage: dosageVal,
+              price: priceVal,
+              Date: dateVal,
+              Time: timeVal,
+              code: codeToUse,
+              status: "pending",
+              accompanying_reps: JSON.stringify(accReps),
+            },
+          ]);
+
+          if (error) throw error;
+
+          document.getElementById("modal-code").textContent = codeToUse;
+          document.getElementById("success-modal").classList.remove("hidden");
+        } catch (err) {
+          showToast("حدث خطأ أثناء الحفظ: " + err.message, "error");
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "تأكيد وإرسال طلب الزيارة ✨";
+        }
+      }
+
+      function closeSuccessModal() {
+        document.getElementById("success-modal").classList.add("hidden");
+        location.reload();
+      }
+
+      async function initCalendar() {
+        try {
+          const now = new Date();
+          const lastDayOfMonth = new Date(
+            now.getFullYear(),
+            now.getMonth() + 1,
+            0,
+          );
+
+          flatpickr("#date", {
+            locale: "ar",
+            dateFormat: "Y-m-d",
+            minDate: "today",
+            maxDate: lastDayOfMonth,
+            disable: [
+              function (date) {
+                const day = date.getDay();
+                return !(day === 0 || day === 2 || day === 6);
+              },
+            ],
+          });
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      function formatTime(timeStr) {
+        if (!timeStr) return "";
+        const [hour] = timeStr.split(":");
+        const h = parseInt(hour, 10);
+        return h >= 12
+          ? `${h === 12 ? 12 : h - 12}:00 مساءً`
+          : `${h}:00 صباحاً`;
+      }
+
+      initCalendar();
+    </script>
+  </body>
+</html>
